@@ -4,7 +4,7 @@ import { ArrowRight, Code, Users, Rocket, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import { DevCatalystHeroScroll } from '../components/DevCatalystHeroScroll';
-import { StarsCanvas } from '../components/ui/stars-canvas';
+import { AntiGravityCanvas } from '../components/ui/anti-gravity-canvas';
 import { GradientButton } from '../components/ui/gradient-button';
 import { GradientText } from '../components/ui/animated-hero';
 import { CtaButton } from '@/components/ui/cta-button';
@@ -115,15 +115,7 @@ const Home = () => {
       {isLoading && (
         <div className="loading-screen fixed inset-0 z-[100] bg-[#060e1a] flex items-center justify-center overflow-hidden">
           {/* Stars Background for Loading */}
-          <StarsCanvas
-            transparent={false}
-            maxStars={1000}
-            hue={0}
-            brightness={1.2}
-            speedMultiplier={1.5}
-            twinkleIntensity={15}
-            className="z-0"
-          />
+          <AntiGravityCanvas className="z-0" />
           <div className="relative flex flex-col items-center justify-center z-10">
             <motion.div
               className="loading-logo mb-12 opacity-0 relative"

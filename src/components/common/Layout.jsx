@@ -8,7 +8,7 @@ import { Sparkles } from 'lucide-react';
 import { CtaButton } from '@/components/ui/cta-button';
 import OpeningOrchestrator from '../ui/opening-orchestrator';
 
-const StarsCanvasLazy = lazy(() => import('../ui/stars-canvas').then(m => ({ default: m.StarsCanvas })));
+import { AntiGravityCanvas } from '../ui/anti-gravity-canvas';
 
 const Layout = ({ children, stars = {} }) => {
   const location = useLocation();
@@ -176,47 +176,9 @@ const Layout = ({ children, stars = {} }) => {
       {/* Opening Orchestrator (very light, CSS-driven) */}
       <OpeningOrchestrator />
 
-      <Suspense fallback={null}>
-        {starsConfig.enabled && (
-          <>
-            {(() => {
-              const isSmall = typeof window !== 'undefined' && window.innerWidth < 640;
-              const deepMax = isSmall
-                ? Math.max(160, Math.floor((starsConfig.maxStars ?? 800) * 0.45))
-                : Math.max(200, Math.floor((starsConfig.maxStars ?? 800) * 0.6));
-              const nearMax = isSmall
-                ? 0
-                : Math.max(120, Math.floor((starsConfig.maxStars ?? 800) * 0.35));
-              return (
-                <>
-                  {/* Deep layer (slower, fewer, darker) */}
-                  <StarsCanvasLazy
-                    transparent={false}
-                    maxStars={deepMax}
-                    hue={(starsConfig.hue ?? 220) - 10}
-                    brightness={(starsConfig.brightness ?? 0.8) * 0.8}
-                    speedMultiplier={isSmall ? (starsConfig.speedMultiplier ?? 1) * 0.45 : (starsConfig.speedMultiplier ?? 1) * 0.55}
-                    twinkleIntensity={isSmall ? (starsConfig.twinkleIntensity ?? 20) * 0.55 : (starsConfig.twinkleIntensity ?? 20) * 0.7}
-                    className={starsConfig.className}
-                  />
-                  {/* Near layer only on desktop */}
-                  {nearMax > 0 && (
-                    <StarsCanvasLazy
-                      transparent={true}
-                      maxStars={nearMax}
-                      hue={(starsConfig.hue ?? 220) + 25}
-                      brightness={(starsConfig.brightness ?? 0.8) * 0.95}
-                      speedMultiplier={(starsConfig.speedMultiplier ?? 1) * 0.95}
-                      twinkleIntensity={(starsConfig.twinkleIntensity ?? 20) * 1.2}
-                      className={starsConfig.className}
-                    />
-                  )}
-                </>
-              );
-            })()}
-          </>
-        )}
-      </Suspense>
+      {starsConfig.enabled && (
+        <AntiGravityCanvas className={starsConfig.className} />
+      )}
 
       {/* Futuristic background overlays */}
       <div className="fixed inset-0 pointer-events-none z-0">
