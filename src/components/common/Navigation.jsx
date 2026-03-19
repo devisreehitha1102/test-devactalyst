@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { MoreHorizontal, X } from 'lucide-react';
+import BubbleMenu from './BubbleMenu';
 
 const Navigation = ({ demoMode = false }) => {
   const location = useLocation();
@@ -175,85 +176,62 @@ const Navigation = ({ demoMode = false }) => {
         </motion.div>
       </motion.nav>
 
-      {/* Mobile hamburger button */}
-      <button
-        ref={hamburgerRef}
-        type="button"
-        aria-label="Open menu"
-        aria-controls="mobile-nav-overlay"
-        aria-expanded={mobileMenuOpen}
-        onClick={() => {
-          if (mobileMenuOpen) {
-            setMobileOpen(false);
-            if (demoMode) {
-              setDemoPath('/');
-            } else {
-              navigate('/');
-            }
-          } else {
-            setMobileOpen(true);
-          }
-        }}
-        className="md:hidden fixed top-5 left-5 z-50 rounded-full backdrop-blur-lg bg-white/10 border border-white/20 touch-target safe-top safe-left w-12 h-12 flex items-center justify-center overflow-hidden"
+      {/* Mobile Top Navigation Bar */}
+      <motion.nav
+        className="md:hidden fixed inset-x-0 top-0 z-50 px-4 pt-4"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Hamburger icon with neon glow */}
-        <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]">
-          <path d="M4 7h16M4 12h16M8 17h12" stroke="#22d3ee" strokeWidth="2.2" strokeLinecap="round"/>
-        </svg>
-      </button>
-
-      {/* Full-screen glass overlay */}
-      <div
-        id="mobile-nav-overlay"
-        aria-hidden={!mobileMenuOpen}
-        className={`md:hidden fixed inset-0 w-full h-full z-40 bg-black/50 backdrop-blur-xl ring-1 ring-white/10 transition-opacity duration-300 ${
-          mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={(e) => {
-          // Close if clicking the dimmed backdrop (not when clicking inside the menu container)
-          if (e.target === e.currentTarget) setMobileOpen(false);
-        }}
-      >
-        {/* Close button inside overlay */}
-        <button
-          ref={closeRef}
-          type="button"
-          aria-label="Close menu"
-          onClick={() => setMobileOpen(false)}
-          className="absolute top-5 right-5 z-50 rounded-full backdrop-blur-lg bg-white/10 border border-white/20 safe-top safe-right w-12 h-12 flex items-center justify-center"
+        <motion.div
+           className="mx-auto w-[92%] rounded-2xl border border-white/20 backdrop-blur-xl px-4 py-2 flex items-center justify-between shadow-2xl"
+           animate={{ backgroundColor: scrolled ? 'rgba(6, 14, 26, 0.9)' : 'rgba(6, 14, 26, 0.6)' }}
+           transition={{ duration: 0.2 }}
         >
-          <X className="w-6 h-6 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]" strokeWidth={2.5} />
-        </button>
+          {/* Mobile Logo */}
+          <Link to={demoMode ? '#' : '/'} onClick={(e) => { if (demoMode) e.preventDefault(); }}>
+            <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl border border-white/20 overflow-hidden shadow-lg">
+              <img src="/devcatalyst-logo.svg" alt="Logo" className="w-8 h-8 object-contain" />
+            </div>
+          </Link>
 
-        {/* Overlay content */}
-        <div className="w-full h-full flex items-center justify-center">
-          <nav className="flex flex-col items-center gap-6">
-            {navItems.map((item) => {
-              const isActive = (demoMode ? demoPath : location.pathname) === item.path;
-              return (
-                <Link
-                  key={item.name}
-                  to={demoMode ? '#' : item.path}
-                  onClick={(e) => {
-                    if (demoMode) {
-                      e.preventDefault();
-                      setDemoPath(item.path);
-                    }
-                    setMobileOpen(false);
-                  }}
-                  className={`text-2xl font-semibold ${
-                    isActive
-                      ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]'
-                      : 'text-white hover:text-cyan-300'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+          {/* Navigation Label with Vibrant Phase of Colors */}
+          <motion.div 
+            className="text-base font-black tracking-[0.25em] uppercase text-white"
+            style={{ 
+              textShadow: '0 0 10px rgba(52, 211, 153, 0.6), 0 0 20px rgba(34, 211, 238, 0.4)',
+              filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.2))'
+            }}
+          >
+            DevCatalyst
+          </motion.div>
+
+          {/* BubbleMenu Implementation */}
+          <BubbleMenu
+            logo={
+              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+                <path d="M4 7h16M4 12h16M8 17h12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            }
+            items={navItems.map((item, i) => ({
+              label: item.name,
+              href: demoMode ? '#' : item.path,
+              ariaLabel: item.name,
+              rotation: i % 2 === 0 ? -8 : 8,
+              hoverStyles: {
+                bgColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#3b82f6'][i % 7],
+                textColor: '#ffffff'
+              }
+            }))}
+            menuBg="rgba(255, 255, 255, 0.15)"
+            menuContentColor="#ffffff"
+            useFixedPosition={false}
+            animationDuration={0.4}
+            staggerDelay={0.08}
+          />
+        </motion.div>
+      </motion.nav>
+
     </>
   );
 };
