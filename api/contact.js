@@ -9,6 +9,13 @@ const ContactSchema = z.object({
 
 const sanitize = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const normalizeContactBody = (body = {}) => ({
+  name: body?.name ?? body?.Name ?? '',
+  email: body?.email ?? body?.Email ?? '',
+  subject: body?.subject ?? body?.Subject ?? '',
+  message: body?.message ?? body?.Message ?? '',
+});
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -16,7 +23,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = ContactSchema.parse(req.body || {});
+    let requestBody = req.body || {};
+
+    if (typeof requestBody === 'string') {
+      try {
+        requestBody = JSON.parse(requestBody);
+      } catch {
+        requestBody = {};
+      }
+    }
+
+    const data = ContactSchema.parse(normalizeContactBody(requestBody));
 
     const payload = {
       name: sanitize(data.name),
@@ -28,23 +45,29 @@ export default async function handler(req, res) {
 
     // --- NEW GOOGLE SHEETS FORWARDING LOGIC ---
     // 1. Paste your Google Web App URL here
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtCysmjMVjAQjJJHDUEgorxuRG08eqEOgLqCl1kXhBJOEWo2Pzh_qizVKIiCaq004_/exec";
+    const GOOGLE_SCRIPT_URL =
+      'https://script.google.com/macros/s/AKfycbxtCysmjMVjAQjJJHDUEgorxuRG08eqEOgLqCl1kXhBJOEWo2Pzh_qizVKIiCaq004_/exec';
 
     // 2. Format the data so Google Apps Script can read it easily
     const formBody = new URLSearchParams();
-    formBody.append("Name", payload.name);
-    formBody.append("Email", payload.email);
-    formBody.append("Subject", payload.subject);
-    formBody.append("Message", payload.message);
+    formBody.append('Name', payload.name);
+    formBody.append('Email', payload.email);
+    formBody.append('Subject', payload.subject);
+    formBody.append('Message', payload.message);
 
     // 3. Send the data to Google
     const googleResponse = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       body: formBody,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     });
 
     if (!googleResponse.ok) {
-      throw new Error('Failed to forward data to Google Sheets');
+      const text = await googleResponse.text();
+      console.error('Google error:', text);
+      throw new Error('Google Sheets request failed');
     }
     // ------------------------------------------
 
@@ -52,7 +75,13 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
 
   } catch (err) {
-    const message = err?.errors?.[0]?.message || err.message || 'Invalid input';
-    return res.status(400).json({ error: message });
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: err.errors?.[0]?.message || 'Invalid input' });
+    }
+
+    console.error('contact_submission failed', err);
+    return res.status(502).json({
+      error: 'Unable to submit right now. Please try again in a moment.',
+    });
   }
 }

@@ -18,6 +18,37 @@ import { GradientButton } from '../components/ui/gradient-button';
 
 import { Helmet } from 'react-helmet-async';
 
+const GOOGLE_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbxtCysmjMVjAQjJJHDUEgorxuRG08eqEOgLqCl1kXhBJOEWo2Pzh_qizVKIiCaq004_/exec';
+
+const validatePayload = (payload) => {
+  if (payload.name.length < 2) return 'Name must be at least 2 characters.';
+  if (!/^\S+@\S+\.\S+$/.test(payload.email)) return 'Please enter a valid email address.';
+  if (payload.subject.length < 3) return 'Subject must be at least 3 characters.';
+  if (payload.message.length < 10) return 'Message must be at least 10 characters.';
+  return '';
+};
+
+const submitToGoogleScript = async (payload) => {
+  const formBody = new URLSearchParams();
+  formBody.append('Name', payload.name);
+  formBody.append('Email', payload.email);
+  formBody.append('Subject', payload.subject);
+  formBody.append('Message', payload.message);
+
+  const fallbackResponse = await fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formBody,
+  });
+
+  if (!fallbackResponse.ok) {
+    throw new Error('Submission failed. Please try again.');
+  }
+};
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     Name: '',
@@ -38,32 +69,63 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true); // Start loading animation
+    setIsSubmitting(true);
     setError('');
 
-    const formElement = e.target;
-    const formData = new FormData(formElement);
-
-    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxtCysmjMVjAQjJJHDUEgorxuRG08eqEOgLqCl1kXhBJOEWo2Pzh_qizVKIiCaq004_/exec";
-
     try {
-      await fetch(GOOGLE_URL, {
+      const payload = {
+        name: formData.Name.trim(),
+        email: formData.Email.trim(),
+        subject: formData.Subject.trim(),
+        message: formData.Message.trim(),
+      };
+
+      const validationMessage = validatePayload(payload);
+      if (validationMessage) {
+        throw new Error(validationMessage);
+      }
+
+      let response = await fetch('/api/contact', {
         method: 'POST',
-        mode: 'no-cors',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
-      // Since 'no-cors' doesn't return a readable response,
-      // we assume success if the fetch doesn't crash.
+      let result = null;
+      try {
+        result = await response.json();
+      } catch {
+        result = null;
+      }
+
+      // In local Vite dev, /api routes are unavailable unless using a functions runtime.
+      // Fallback directly to Google Apps Script so contact submissions still work.
+      if (response.status === 404) {
+        await submitToGoogleScript(payload);
+        response = { ok: true };
+      }
+
+      if (!response.ok) {
+        throw new Error(result?.error || 'Submission failed. Please try again.');
+      }
+
       setIsSubmitted(true);
-      formElement.reset();
+      setFormData({
+        Name: '',
+        Email: '',
+        Subject: '',
+        Message: '',
+      });
     } catch (err) {
-      console.error("Error:", err);
-      setError("Submission failed. Please try again.");
+      console.error(err);
+      setError(err?.message || 'Submission failed. Please try again.');
     } finally {
-      setIsSubmitting(false); // Stop loading animation
+      setIsSubmitting(false);
     }
   };
+
   const contactMethods = [
     {
       icon: <Mail className="w-6 h-6" />,
@@ -288,7 +350,7 @@ const Contact = () => {
                         <input
                           type="text"
                           name="Name"
-                          value={formData.name}
+                          value={formData.Name}
                           onChange={handleInputChange}
                           required
                           className="w-full px-4 py-3 bg-white/5 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all"
@@ -306,7 +368,7 @@ const Contact = () => {
                         <input
                           type="email"
                           name="Email"
-                          value={formData.email}
+                          value={formData.Email}
                           onChange={handleInputChange}
                           required
                           className="w-full px-4 py-3 bg-white/5 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all"
@@ -325,7 +387,7 @@ const Contact = () => {
                       <input
                         type="text"
                         name="Subject"
-                        value={formData.subject}
+                        value={formData.Subject}
                         onChange={handleInputChange}
                         required
                         className="w-full px-4 py-3 bg-white/5 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all"
@@ -342,9 +404,10 @@ const Contact = () => {
                       <label className="block text-white font-medium mb-2">Message</label>
                       <textarea
                         name="Message"
-                        value={formData.message}
+                        value={formData.Message}
                         onChange={handleInputChange}
                         required
+                        minLength={10}
                         rows={6}
                         className="w-full px-4 py-3 bg-white/5 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all resize-none"
                         placeholder="Tell us more about your message..."
@@ -358,12 +421,12 @@ const Contact = () => {
                       viewport={{ once: true }}
                     >
                       <GradientButton
-                        variant="accent"
-                        size="lg"
-                        className="w-full"
-                        disabled={isSubmitting}
-                        onClick={() => { }}
-                      >
+  type="submit"
+  variant="accent"
+  size="lg"
+  className="w-full"
+  disabled={isSubmitting}
+>
                         {isSubmitting ? (
                           <>
                             <motion.div
