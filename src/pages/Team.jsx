@@ -17,6 +17,7 @@ const TECH_TEAM = [
   { name: 'Liam Patel', role: 'Fullstack Engineer', image: '/api/placeholder/300/300', github: '#', instagram: '#', bio: 'Bridging UI and services.' },
   { name: 'Emma Davis', role: 'DevOps Engineer', image: '/api/placeholder/300/300', github: '#', instagram: '#', bio: 'CI/CD and cloud deployments.' },
   { name: 'Noah Johnson', role: 'Mobile Developer', image: '/api/placeholder/300/300', github: '#', instagram: '#', bio: 'Flutter, React Native.' },
+  { name: 'P.Devi Sreehitha', role:'Member', github:'https://github.com/devisreehitha1102', instagram:'https://www.instagram.com/devi_sreehitha_7659/', bio:'Pursuing IT in 1st year and interested in web development and debugging.'}
   { name: 'Olivia Wilson', role: 'UI Engineer', image: '/api/placeholder/300/300', github: '#', instagram: '#', bio: 'Design systems and accessibility.' },
 ];
 
