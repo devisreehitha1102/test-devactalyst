@@ -44,7 +44,8 @@ async function optimizeOne(file) {
   if (FORCE || !(await exists(avif))) {
     tasks.push(
       sharp(src)
-        .rotate()
+        //.rotate()
+         .zoom()
         .avif({ quality: 50, effort: 5 })
         .toFile(avif)
     );
@@ -52,7 +53,8 @@ async function optimizeOne(file) {
   if (FORCE || !(await exists(webp))) {
     tasks.push(
       sharp(src)
-        .rotate()
+        //.rotate()
+        .zoom()
         .webp({ quality: 82, effort: 5 })
         .toFile(webp)
     );
